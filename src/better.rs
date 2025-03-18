@@ -1,7 +1,7 @@
-#[allow(unused)]
+
 pub fn space_mission_smart() {
-    let apollo = Spacecraft::new("Apollo XVIII".into(), 3);
-    apollo.call_on_radio("Apollo XVIII is go for launch!");
+    let apollo = Spacecraft::new("Apollo".into(), 3);
+    apollo.call_on_radio("Apollo is go for launch!");
     let apollo = apollo.launch(); // <- shadowing a previous declaration is encouraged
     let apollo = apollo.jettison_booster();
     println!(
@@ -10,30 +10,26 @@ pub fn space_mission_smart() {
     );
     println!("Eureka! {}!", apollo.perform_science());
 
-    let artemis = Spacecraft::new("Artemis I".into(), 4);
+    let artemis = Spacecraft::new("Artemis".into(), 4);
     let artemis = artemis.launch();
     let artemis = artemis.jettison_booster();
 
     println!("{:?}", artemis);
     println!("{:?}", apollo);
 
-    artemis.call_on_radio("Artemis I, you are cleared to dock!");
+    artemis.call_on_radio("Artemis, you are cleared to dock!");
     let mut rendezvous = artemis.dock(apollo);
     println!(
         "Bytes while docked: {}",
         std::mem::size_of::<Spacecraft<Docked>>()
     );
+    rendezvous.perform_science();
+    // artemis.perform_science(); // <-- This is not allowed, as the artemis binding has been moved
     rendezvous.transfer_crew(2);
 
-    // artemis.perform_science();
-
     let (artemis, apollo) = rendezvous.undock();
-
     println!("{:?}", artemis);
     println!("{:?}", apollo);
-
-    let newglenn = Spacecraft::new("New Glenn".into(), 2);
-
 }
 
 trait State {
@@ -43,16 +39,16 @@ trait State {
 trait CanPerformScience {}
 
 #[derive(Debug)]
-struct ReadyToLaunch;
-impl State for ReadyToLaunch {
+struct OnTheGround;
+impl State for OnTheGround {
     fn get_state_text(&self) -> String {
         "ready to launch".into()
     }
 }
 
 #[derive(Debug)]
-struct InAtmosphere;
-impl State for InAtmosphere {
+struct Launching;
+impl State for Launching {
     fn get_state_text(&self) -> String {
         "in atmosphere".into()
     }
@@ -87,7 +83,7 @@ struct Spacecraft<S: State> {
 
 // These functions can always be called, regardless of state
 // This means they can only use the general fields of the Spacecraft struct
-impl<T: State> Spacecraft<T> {
+impl<S: State> Spacecraft<S> {
     fn call_on_radio(&self, _message: &str) -> String {
         format!(
             "{} is {} and copies all!",
@@ -97,21 +93,21 @@ impl<T: State> Spacecraft<T> {
     }
 }
 
-impl Spacecraft<ReadyToLaunch> {
+impl Spacecraft<OnTheGround> {
     fn new(name: String, crew: u32) -> Self {
         Self {
             name,
             crew,
-            state: ReadyToLaunch,
+            state: OnTheGround,
         }
     }
 
-    fn launch(self) -> Spacecraft<InAtmosphere> {
+    fn launch(self) -> Spacecraft<Launching> {
         println!("3... 2... 1... Liftoff for {}!", self.name);
         Spacecraft {
             name: self.name,
             crew: self.crew,
-            state: InAtmosphere,
+            state: Launching,
         }
 
         // Optimization for types that are expensive to copy. It
@@ -124,7 +120,7 @@ impl Spacecraft<ReadyToLaunch> {
     }
 }
 
-impl Spacecraft<InAtmosphere> {
+impl Spacecraft<Launching> {
     fn jettison_booster(self) -> Spacecraft<InOrbit> {
         println!("Booster separation confirmed for {}", self.name);
         Spacecraft {
@@ -139,8 +135,8 @@ impl Spacecraft<InOrbit> {
     fn dock(self, other: Spacecraft<InOrbit>) -> Spacecraft<Docked> {
         println!("Docking clamps locked!");
         Spacecraft {
-            name: self.name.clone(),
-            crew: self.crew,
+            name: format!("{} and {}", self.name, other.name),
+            crew: self.crew + other.crew,
             state: Docked {
                 ships: Box::new((self, other)),
             },
