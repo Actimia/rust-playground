@@ -2,41 +2,43 @@
 pub fn space_mission_smart() {
     let apollo = Spacecraft::new("Apollo".into(), 3);
     apollo.call_on_radio("Apollo is go for launch!");
-    let apollo = apollo.launch(); // <- shadowing a previous declaration is encouraged
+    let apollo = apollo.start_engines(); // <- shadowing a previous declaration is encouraged
     let apollo = apollo.jettison_booster();
-    println!(
-        "Bytes in orbit: {}",
-        std::mem::size_of::<Spacecraft<InOrbit>>()
-    );
     println!("Eureka! {}!", apollo.perform_science());
 
     let artemis = Spacecraft::new("Artemis".into(), 4);
-    let artemis = artemis.launch();
+    let artemis = artemis.start_engines();
     let artemis = artemis.jettison_booster();
 
-    println!("{:?}", artemis);
     println!("{:?}", apollo);
-
+    println!("{:?}", artemis);
+    
     artemis.call_on_radio("Artemis, you are cleared to dock!");
     let mut rendezvous = artemis.dock(apollo);
-    println!(
-        "Bytes while docked: {}",
-        std::mem::size_of::<Spacecraft<Docked>>()
-    );
+
+    println!("{:?}", rendezvous);
+
     rendezvous.perform_science();
     // artemis.perform_science(); // <-- This is not allowed, as the artemis binding has been moved
     rendezvous.transfer_crew(2);
 
     let (artemis, apollo) = rendezvous.undock();
-    println!("{:?}", artemis);
     println!("{:?}", apollo);
+    println!("{:?}", artemis);
+}
+
+#[derive(Debug)]
+struct Spacecraft<S: State> {
+    name: String,
+    crew: u32,
+    state: S,
 }
 
 trait State {
     fn get_state_text(&self) -> String;
 }
 
-trait CanPerformScience {}
+trait CanPerformScience {} // <- a trait with no functions is called a "marker trait"
 
 #[derive(Debug)]
 struct OnTheGround;
@@ -74,13 +76,6 @@ impl State for Docked {
 }
 impl CanPerformScience for Docked {}
 
-#[derive(Debug)]
-struct Spacecraft<S: State> {
-    name: String,
-    crew: u32,
-    state: S,
-}
-
 // These functions can always be called, regardless of state
 // This means they can only use the general fields of the Spacecraft struct
 impl<S: State> Spacecraft<S> {
@@ -102,7 +97,7 @@ impl Spacecraft<OnTheGround> {
         }
     }
 
-    fn launch(self) -> Spacecraft<Launching> {
+    fn start_engines(self) -> Spacecraft<Launching> {
         println!("3... 2... 1... Liftoff for {}!", self.name);
         Spacecraft {
             name: self.name,
@@ -153,6 +148,15 @@ impl Spacecraft<Docked> {
     fn undock(self) -> (Spacecraft<InOrbit>, Spacecraft<InOrbit>) {
         println!("Releasing docking clamps!");
         *self.state.ships
+    }
+
+    fn try_teleport_home(self) -> Result<Spacecraft<OnTheGround>, Self> {
+        let x = 0.3;
+        if x < 0.5 {
+            Ok(Spacecraft { name: self.name, crew: self.crew, state: OnTheGround })
+        } else {
+            Err(self)
+        }
     }
 }
 

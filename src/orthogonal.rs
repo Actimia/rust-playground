@@ -1,5 +1,5 @@
 #[allow(unused)]
-pub fn space_mission_best() {
+pub fn space_mission_orthogonal() {
     println!(
         "Bytes in orbit: {}",
         std::mem::size_of::<Spacecraft<InOrbit, Undocked>>()

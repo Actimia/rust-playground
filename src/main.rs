@@ -1,13 +1,15 @@
-use best::space_mission_best;
 use better::space_mission_smart;
-use naive::space_mission_naive;
+use borrow::the_borrow_checker;
 
 mod naive;
 mod better;
-mod best;
+mod orthogonal;
+mod borrow;
+mod generic;
 
 fn main() {
+    the_borrow_checker();
     //space_mission_naive();
     space_mission_smart();
-    //space_mission_best();
+    //space_mission_orthogonal();
 }
