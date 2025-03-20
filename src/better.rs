@@ -3,6 +3,7 @@ pub fn space_mission_better() {
     apollo.call_on_radio("Apollo is go for launch!");
     let apollo = apollo.start_engines(); // <- shadowing a previous declaration is encouraged
     let apollo = apollo.jettison_booster();
+    //apollo.call_on_radio("");
     println!("Eureka! {}!", apollo.perform_science());
 
     let artemis = Spacecraft::new("Artemis".into(), 4);
