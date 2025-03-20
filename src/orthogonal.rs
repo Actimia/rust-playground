@@ -38,7 +38,6 @@ pub fn space_mission_orthogonal() {
     println!("{:?}", apollo);
 
     let newglenn = Spacecraft::new("New Glenn".into(), 2);
-
 }
 
 trait State {
@@ -99,7 +98,7 @@ struct Spacecraft<S: State, D: DockingState> {
     name: String,
     crew: u32,
     state: S,
-    docking: D
+    docking: D,
 }
 
 impl Spacecraft<ReadyToLaunch, Undocked> {
@@ -108,7 +107,7 @@ impl Spacecraft<ReadyToLaunch, Undocked> {
             name,
             crew,
             state: ReadyToLaunch,
-            docking: Undocked
+            docking: Undocked,
         }
     }
 }
@@ -126,14 +125,14 @@ impl<S: State, D: DockingState> Spacecraft<S, D> {
     }
 }
 
-impl <D: DockingState> Spacecraft<ReadyToLaunch, D> {
+impl<D: DockingState> Spacecraft<ReadyToLaunch, D> {
     fn launch(self) -> Spacecraft<InAtmosphere, D> {
         println!("3... 2... 1... Liftoff for {}!", self.name);
         Spacecraft::<InAtmosphere, D> {
             name: self.name,
             crew: self.crew,
             state: InAtmosphere,
-            docking: self.docking
+            docking: self.docking,
         }
 
         // Optimization for types that are expensive to copy. It
@@ -146,19 +145,19 @@ impl <D: DockingState> Spacecraft<ReadyToLaunch, D> {
     }
 }
 
-impl <D: DockingState> Spacecraft<InAtmosphere, D> {
+impl<D: DockingState> Spacecraft<InAtmosphere, D> {
     fn jettison_booster(self) -> Spacecraft<InOrbit, D> {
         println!("Booster separation confirmed for {}", self.name);
         Spacecraft::<InOrbit, D> {
             name: self.name,
             crew: self.crew,
             state: InOrbit,
-            docking: self.docking
+            docking: self.docking,
         }
     }
 }
 
-impl <S: State + Clone> Spacecraft<S, Undocked> {
+impl<S: State + Clone> Spacecraft<S, Undocked> {
     fn dock(self, other: Spacecraft<S, Undocked>) -> Spacecraft<S, Docked<S>> {
         println!("Docking clamps locked!");
         Spacecraft {
@@ -166,8 +165,8 @@ impl <S: State + Clone> Spacecraft<S, Undocked> {
             crew: self.crew + other.crew,
             state: self.state.clone(),
             docking: Docked {
-                ships: Box::new((self, other))
-            }
+                ships: Box::new((self, other)),
+            },
         }
     }
 }

@@ -1,9 +1,10 @@
 SDP 25-03-20
 
 ## Typesafe State Machines in Rust
- - Hello my name is...
-   - I am new to Agreat...
-
+ - Hello my name is Viking Edström 
+ - I am new to Agreat, but I have enjoyed my time here so far!
+ - Today, we are going to talk about state machines and a technique for building them in Rust that prevents a lot of common errors
+ - Don't worry if you have not used Rust before, I will explain everything as we go
 
 ### 10000-feet overview of Rust
  - Who here have heard of Rust? Who has written Rust?
@@ -18,9 +19,31 @@ SDP 25-03-20
 
 #### The Borrow Checker
  - Underpins much of what we are going to look at today
- - There are three different bindings
- - owned, ref, mut ref
- - Some versions are automatically coerced, but only when it is 100% safe to do so
+ - For this talk, there are three different type of bindings we need to know
+ - Owned: `Thing`
+   - We have singular control of this data, and we can create new references to it
+   - While we own this data, no other part of the program can own it at the same time
+ - References: `&Thing`
+   - We can only read from this reference, and can only create other read-only references
+   - Multiple references can exist to the same data at the same time
+ - Mutable references: `&mut Thing`
+   - We can read and write to this data
+   - Also called an "exclusive borrow", as no other references can exist while we have this
+ - There is some automatic coercion between types, but only when it is 100% safe to do so
+   - For example, we can pass a `&mut Thing` when a `&Thing` is expected
+
+### Code priorities
+ - Whenever we write code, there are several aspects of the result that must be balanced
+   - The most important is the correctness of the code
+     - I don't think this is controversial
+     - Without correctness, nothing else matters
+     - A sub-corollary of this is that we prefer compiletime errors to runtime errors
+   - Next is readability, which includes editability
+     - Is the code easy to extend, both by you and other people?
+   - Last is performance
+     - We obviously cannot sacrifice correctness for performance
+     - In a large majority of circumstances, you should not sacrifice readability for performance either
+       - If we do, it is after careful measuring
 
 ### State Machines
  - State machines are a powerful concept for encoding real-world systems
@@ -28,21 +51,22 @@ SDP 25-03-20
    - Network connections
    - Regular expressions
    - Messages/order systems
-   - Turn based gamesß
+   - Turn based games
    - Traffic lights
    - Scene management in games
- - Naive implementations often have runtime overhead or are easy to misuse
- - It would be nice if we could let the compiler take care of it!
-   - Preferrably with minimal runtime overhead and zero memory cost
 
 ### Our State Machine
  - Toy model of a rocket launch
    - Could be extended with many more states (like re-entry), but that is not the point
  - Very important that the actions are only carried out in the correct state
-   - We can only launch when we are on the ground
-   - We can always hail the spacecraft on the radio
+   - For example, we really only want to be able to start the engines when we are on the ground
+   - Other actions are more permissive, we can always hail the spacecraft on the radio
+
+### Time for code!
+ - Feel free to interupt with questions!
 
 ### A Naive Implementation
+ - Naive implementations often have runtime overhead or are easy to misuse
  - State is stored as an enum value
    - Another nice feature of Rust are data fields on enum variants
  - Each function must check its preconditions, and panic at runtime if they are not met
@@ -54,18 +78,24 @@ SDP 25-03-20
    - We overwrite the state first, even if the state was not correct!
 
 ### Rust to the Rescue
+ - It would be nice if we could let the compiler take care of it!
+   - Preferrably with minimal runtime overhead, both in what code we execute and the memory we use
  - Encode the state as a type parameter instead
    - The states are no longer values, but are instead types
-   - We store the state
+     - This lets us move the logic from the runtime to the compiler
+   - We store the state to enable state-specific data
      - Most state structs are 0-sized and they will be completely erased at runtime
      - If all states were 0-sized, one could use a `PhantomData`
+   - State transition functions consume the previous binding and create a new instance
+     - This can be made to be pretty cheap with clever data layout - but remember the priorities!
+     - The borrow checker ensures we can never use the previous bindings
  - Rust allows specialized `impl`-blocks for different type parameters, grouping related code together
    - It is no longer possible to call a function on a different state, checked at runtime
    - This is also understood by IDEs, which doesn't even suggest invalid functions
    - Functions can be applied to more than one state via marker traits (`CanPerformScience`)
 
 ### Limitations and workarounds:
- - No undeterministic state transitions
+ - Can be cumbersome to do undeterministic state transitions
  - Slightly more code, but it is a linear overhead that would disappear with longer method bodies
  - No shared references to the state machine, due to state transitions requiring ownership
    - This also means you cannot store a list of all spacecraft, due to them being different types
@@ -78,3 +108,10 @@ SDP 25-03-20
    - However, this makes the code considerably more complicated to write
    - Would not use more than two state type parameters
  - This is essentially compile-time dependency injection, but with state
+
+### Thank you
+ - There is a lot of talk about how hard Rust is, and while the learning curve is steeper than say Python, there is a lot of good material out there
+   - If you want to learn Rust, the interactive version of the Rust book is awesome
+     - It has interactive quizzes that really helps with learning the material
+   - I also want to highlight Jon Gjengset, whose Youtube channel has some of the best intermediate level Rust content
+ - The code for this talk is also available, if anyone wants to take a closer look

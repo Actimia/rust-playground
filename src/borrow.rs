@@ -8,7 +8,8 @@ fn i_take_an_owned(thing: Thing) -> Thing {
 }
 
 fn i_take_a_ref(thing: &Thing) {
-    println!("{}", thing.data);
+    thing.data;
+    //println!("{}", thing.data);
 }
 
 fn i_take_a_mut_ref(thing: &mut Thing) {

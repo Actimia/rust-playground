@@ -1,5 +1,4 @@
-
-pub fn space_mission_smart() {
+pub fn space_mission_better() {
     let apollo = Spacecraft::new("Apollo".into(), 3);
     apollo.call_on_radio("Apollo is go for launch!");
     let apollo = apollo.start_engines(); // <- shadowing a previous declaration is encouraged
@@ -12,7 +11,7 @@ pub fn space_mission_smart() {
 
     println!("{:?}", apollo);
     println!("{:?}", artemis);
-    
+
     artemis.call_on_radio("Artemis, you are cleared to dock!");
     let mut rendezvous = artemis.dock(apollo);
 
@@ -23,6 +22,7 @@ pub fn space_mission_smart() {
     rendezvous.transfer_crew(2);
 
     let (artemis, apollo) = rendezvous.undock();
+
     println!("{:?}", apollo);
     println!("{:?}", artemis);
 }
@@ -86,6 +86,20 @@ impl<S: State> Spacecraft<S> {
             self.state.get_state_text()
         )
     }
+
+    #[allow(unused)]
+    fn try_teleport_home(self) -> Result<Spacecraft<OnTheGround>, Self> {
+        // Experimental teleportation drive for emergencies: It may get you home, it might not!
+        if rand::random_bool(0.5) {
+            Ok(Spacecraft {
+                name: self.name,
+                crew: self.crew,
+                state: OnTheGround,
+            })
+        } else {
+            Err(self)
+        }
+    }
 }
 
 impl Spacecraft<OnTheGround> {
@@ -141,6 +155,7 @@ impl Spacecraft<InOrbit> {
 
 impl Spacecraft<Docked> {
     fn transfer_crew(&mut self, amount: u32) {
+        let amount = amount.min(self.state.ships.0.crew);
         self.state.ships.0.crew -= amount;
         self.state.ships.1.crew += amount;
     }
@@ -148,15 +163,6 @@ impl Spacecraft<Docked> {
     fn undock(self) -> (Spacecraft<InOrbit>, Spacecraft<InOrbit>) {
         println!("Releasing docking clamps!");
         *self.state.ships
-    }
-
-    fn try_teleport_home(self) -> Result<Spacecraft<OnTheGround>, Self> {
-        let x = 0.3;
-        if x < 0.5 {
-            Ok(Spacecraft { name: self.name, crew: self.crew, state: OnTheGround })
-        } else {
-            Err(self)
-        }
     }
 }
 

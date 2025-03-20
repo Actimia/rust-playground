@@ -1,11 +1,28 @@
 use std::{marker::PhantomData, ops::Deref};
 
+use use_generic::Spacecraft;
+
+#[allow(unused)]
+pub fn space_mission_generic() {
+    let apollo = Spacecraft::new("Apollo", 3);
+    let apollo = apollo.liftoff();
+    let apollo = apollo.jettison_booster();
+
+    println!("{}: {} crew", apollo.name, apollo.crew);
+
+    if let Ok(apollo) = apollo.try_teleport_home() {
+        println!("We made it!")
+    } else {
+        println!("BOOM")
+    }
+}
+
 pub trait State<D> {}
 pub trait InitialState<D, S: State<D>> {
     fn from_data(data: D) -> StateMachine<D, S> {
         StateMachine {
             data,
-            state: PhantomData
+            state: PhantomData,
         }
     }
 }
@@ -58,8 +75,18 @@ mod use_generic {
     pub struct InOrbit;
     impl State<SpacecraftData> for InOrbit {}
 
-    impl Spacecraft<OnTheGround> {
+    impl<S: State<SpacecraftData>> Spacecraft<S> {
+        pub fn try_teleport_home(self) -> Result<Spacecraft<OnTheGround>, ()> {
+            // VERY experimental drive.
+            if rand::random_bool(0.5) {
+                Ok(self.change_state())
+            } else {
+                Err(()) // kaboom
+            }
+        }
+    }
 
+    impl Spacecraft<OnTheGround> {
         pub fn new(name: &'static str, crew: u32) -> Self {
             Spacecraft::from_data(SpacecraftData { name, crew })
         }
@@ -68,19 +95,11 @@ mod use_generic {
             println!("3 2 1 Liftoff!");
             self.change_state()
         }
-
-        pub fn try_teleport_home(self) -> Result<Spacecraft<OnTheGround>, ()> {
-            let rng = 0.35;
-            if rng < 0.5 {
-                Ok(self.change_state())
-            } else {
-                Err(()) // kaboom
-            }
-        }
     }
 
-    fn do_work() {
-        let craft = Spacecraft::new( "Apollo", 3 );
-        let craft = craft.liftoff();
+    impl Spacecraft<Launching> {
+        pub fn jettison_booster(self) -> Spacecraft<InOrbit> {
+            self.change_state()
+        }
     }
 }
